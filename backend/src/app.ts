@@ -19,16 +19,29 @@ import { addDays } from "./utils";
 export async function createApp(): Promise<Express> {
   const app = express();
 
-  const allowedOrigins = (process.env.WEB_ORIGIN ?? "http://localhost:3000")
+  // Origins allowed for browser requests. Explicit WEB_ORIGIN (comma-separated) plus
+  // the Vercel-injected deployment URLs, so the unified deployment works without manual
+  // config and preview URLs keep working too.
+  const configuredOrigins = (process.env.WEB_ORIGIN ?? "http://localhost:3000")
     .split(",")
-    .map((o) => o.trim());
+    .map((o) => o.trim())
+    .filter(Boolean);
+  const vercelOrigins = [
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.VERCEL_URL,
+    process.env.VERCEL_BRANCH_URL,
+  ]
+    .filter(Boolean)
+    .map((h) => `https://${h}`);
+  const allowedOrigins = new Set([...configuredOrigins, ...vercelOrigins]);
 
   app.use(
     cors({
       origin: (origin, cb) => {
-        // Allow requests with no origin (curl, Postman, SSR, same-origin) and any listed origin
-        if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-        cb(new Error(`CORS: ${origin} not allowed`));
+        // Allow requests with no origin (curl, Postman, SSR, same-origin) and any allowed origin.
+        // Deny gracefully (no thrown error → no 500) — just omit CORS headers.
+        if (!origin || allowedOrigins.has(origin)) return cb(null, true);
+        cb(null, false);
       },
       credentials: true,
     })
