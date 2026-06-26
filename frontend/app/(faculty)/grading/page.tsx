@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { Suspense, useState, useMemo } from "react";
 import { useQuery, useMutation } from "@apollo/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, CheckCircle, Clock, Filter, CheckSquare, Square, Loader2, Users } from "lucide-react";
@@ -20,7 +20,7 @@ interface QueueItem {
   submittedAt: string;
 }
 
-export default function GradingQueuePage() {
+function GradingQueueInner() {
   const router = useRouter();
   const params = useSearchParams();
   const [filterAssignment, setFilterAssignment] = useState(params.get("assignment") ?? "");
@@ -163,6 +163,14 @@ export default function GradingQueuePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function GradingQueuePage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-gray-400">Loading grading queue…</div>}>
+      <GradingQueueInner />
+    </Suspense>
   );
 }
 

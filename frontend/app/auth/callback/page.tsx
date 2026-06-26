@@ -1,12 +1,20 @@
 "use client";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { saveTokens } from "@/lib/auth";
 import { useAuthStore } from "@/lib/store";
 import { apolloClient } from "@/lib/apollo";
 import { ME } from "@/lib/graphql/queries";
 
-export default function AuthCallback() {
+function Spinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin w-8 h-8 border-2 border-violet-600 border-t-transparent rounded-full" />
+    </div>
+  );
+}
+
+function AuthCallbackInner() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -28,9 +36,13 @@ export default function AuthCallback() {
       .catch(() => router.push("/login"));
   }, [params, router]);
 
+  return <Spinner />;
+}
+
+export default function AuthCallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin w-8 h-8 border-2 border-violet-600 border-t-transparent rounded-full" />
-    </div>
+    <Suspense fallback={<Spinner />}>
+      <AuthCallbackInner />
+    </Suspense>
   );
 }
