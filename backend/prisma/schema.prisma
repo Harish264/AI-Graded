@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  FACULTY
+  HOD
+  STUDENT
+}
+
+enum AssignmentType {
+  ASSIGNMENT
+  INTERNAL_ASSESSMENT
+  LAB_RECORD
+  DESCRIPTIVE_EXAM
+}
+
+enum AssignmentStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  AI_GRADING
+  PENDING_REVIEW
+  APPROVED
+  PUBLISHED
+}
+
+enum GradeStatus {
+  AI_DRAFT
+  APPROVED
+  OVERRIDDEN
+  PUBLISHED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  fullName     String
+  passwordHash String?
+  googleId     String?   @unique
+  role         UserRole  @default(STUDENT)
+  department   String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+
+  refreshTokens RefreshToken[]
+  rubrics       Rubric[]
+  assignments   Assignment[]
+  submissions   Submission[]
+  gradesReviewed Grade[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Rubric {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  totalMarks  Float
+  department  String?
+  isTemplate  Boolean  @default(false)
+  createdById String
+  createdAt   DateTime @default(now())
+
+  createdBy   User              @relation(fields: [createdById], references: [id])
+  criteria    RubricCriterion[]
+  assignments Assignment[]
+
+  @@map("rubrics")
+}
+
+model RubricCriterion {
+  id          String  @id @default(uuid())
+  rubricId    String
+  name        String
+  description String?
+  maxMarks    Float
+  order       Int     @default(0)
+
+  rubric        Rubric               @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+  criterionScores GradeCriterionScore[]
+
+  @@map("rubric_criteria")
+}
+
+model Assignment {
+  id                    String           @id @default(uuid())
+  title                 String
+  question              String
+  modelAnswer           String
+  assignmentType        AssignmentType   @default(ASSIGNMENT)
+  status                AssignmentStatus @default(DRAFT)
+  subject               String?
+  semester              String?
+  section               String?
+  rubricId              String
+  createdById           String
+  openDate              DateTime?
+  dueDate               DateTime?
+  lateSubmissionPenalty Float?
+  instructions          String?
+  submissionGuidelines  String?
+  referenceMaterials    String?
+  notesForStudents      String?
+  isActive              Boolean          @default(false)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  rubric      Rubric       @relation(fields: [rubricId], references: [id])
+  createdBy   User         @relation(fields: [createdById], references: [id])
+  submissions Submission[]
+
+  @@map("assignments")
+}
+
+model Submission {
+  id           String           @id @default(uuid())
+  assignmentId String
+  studentId    String
+  answerText   String?
+  fileKey      String?
+  ocrText      String?
+  status       SubmissionStatus @default(SUBMITTED)
+  submittedAt  DateTime         @default(now())
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id])
+  student    User       @relation(fields: [studentId], references: [id])
+  grade      Grade?
+
+  @@unique([assignmentId, studentId])
+  @@map("submissions")
+}
+
+model Grade {
+  id             String      @id @default(uuid())
+  submissionId   String      @unique
+  aiScore        Float?
+  finalScore     Float?
+  aiFeedback     String?
+  finalFeedback  String?
+  confidence     Float?
+  needsReview    Boolean     @default(false)
+  status         GradeStatus @default(AI_DRAFT)
+  reviewedById   String?
+  reviewedAt     DateTime?
+  createdAt      DateTime    @default(now())
+
+  submission      Submission           @relation(fields: [submissionId], references: [id])
+  reviewedBy      User?                @relation(fields: [reviewedById], references: [id])
+  criterionScores GradeCriterionScore[]
+  auditLogs       AuditLog[]
+
+  @@map("grades")
+}
+
+model GradeCriterionScore {
+  id          String  @id @default(uuid())
+  gradeId     String
+  criterionId String
+  aiScore     Float?
+  finalScore  Float?
+  comment     String?
+
+  grade     Grade           @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  criterion RubricCriterion @relation(fields: [criterionId], references: [id])
+
+  @@map("grade_criterion_scores")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  gradeId    String
+  action     String
+  actorId    String
+  aiScore    Float?
+  humanScore Float?
+  note       String?
+  timestamp  DateTime @default(now())
+
+  grade Grade @relation(fields: [gradeId], references: [id])
+
+  @@map("audit_logs")
+}

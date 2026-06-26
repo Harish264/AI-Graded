@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { @apply bg-gray-50 text-gray-900 antialiased; }
+}
+@layer utilities {
+  .gradient-brand { background: linear-gradient(135deg, #6D28D9 0%, #8B5CF6 50%, #A78BFA 100%); }
+  .text-gradient-brand {
+    background: linear-gradient(135deg, #6D28D9 0%, #A78BFA 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}

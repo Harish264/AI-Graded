@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment variables (contain secrets — never commit)
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+.next/
+out/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / tooling
+.vscode/
+.idea/
+.claude/
+
+# Prisma generated
+prisma/migrations/dev.db
