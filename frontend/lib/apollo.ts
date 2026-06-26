@@ -2,9 +2,12 @@
 import { ApolloClient, InMemoryCache, createHttpLink, from } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
+import { graphqlUri } from "./config";
 
 const httpLink = createHttpLink({
-  uri: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/graphql",
+  // Resolved per-operation so the browser origin (window) is available — this lets the
+  // unified deployment use the /_/backend prefix while local dev hits localhost:4000.
+  uri: () => graphqlUri(),
 });
 
 const authLink = setContext((_, { headers }) => {

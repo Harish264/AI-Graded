@@ -8,6 +8,7 @@ import { GraduationCap, Chrome } from "lucide-react";
 import { LOGIN, REGISTER } from "@/lib/graphql/mutations";
 import { saveTokens } from "@/lib/auth";
 import { useAuthStore } from "@/lib/store";
+import { googleAuthUrl } from "@/lib/config";
 
 interface FormData {
   email: string; password: string; fullName: string;
@@ -44,7 +45,7 @@ export default function LoginPage() {
     }
   };
 
-  const googleAuthUrl = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL ?? "http://localhost:4000/auth/google";
+  const googleHref = googleAuthUrl();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-violet-50 flex items-center justify-center p-4">
@@ -68,7 +69,7 @@ export default function LoginPage() {
           </div>
 
           {/* Google OAuth */}
-          <a href={googleAuthUrl}
+          <a href={googleHref}
             className="flex items-center justify-center gap-2 w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors mb-4">
             <Chrome size={18} /> Continue with Google
           </a>
